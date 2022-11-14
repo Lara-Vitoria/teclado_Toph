@@ -1,4 +1,15 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+
 #include "Keypad.h"
+
+//conexao wifi
+const char* ssid = "BEST FAMILY_EXT";
+const char* password = "pedroasafe";
+
+//web server
+ESP8266WebServer server(80);
 
 const byte linhas = 3;
 const byte colunas = 3;
@@ -26,13 +37,42 @@ byte pinosColunas[colunas] = { D3, D4, D5 };
 Keypad teclado = Keypad(makeKeymap(Teclas), pinosLinhas, pinosColunas, linhas, colunas);
 
 void setup() {
+  //botoes de envio, espaço e apagar
   pinMode(D5, INPUT);
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
   Serial.begin(9600);
+  
+  //configuraçoes do wifi
+  WiFi.begin(ssid, password);
+  while(WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.println("tentando conexao");
+  }
+  Serial.println("");
+  Serial.print("Conectado no IP: " );
+  Serial.print(WiFi.localIP());
+  Serial.print("Conexão efetuada com sucesso!");
+
+  //inicia web server
+  server.begin();
+  Serial.println("web server iniciado");
+  delay(500);
+  Serial.println("acesse o endereço pelo: ");
+  Serial.print(WiFi.localIP());
+
+  server.on("/", [](){
+    server.send(200, "req", "servidor do nodemcu");
+  });
+
+  server.on("/dados", [](){
+    server.send(200, "cabeçalho", palavra);
+  });
 }
 
 void loop() {
+
+  server.handleClient();
 
   char teclaClicada = teclado.getKey();
 
