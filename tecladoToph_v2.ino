@@ -1,15 +1,18 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 
 #include "Keypad.h"
 
 //conexao wifi
-const char* ssid = "BEST FAMILY_EXT";
-const char* password = "pedroasafe";
+const char* ssid = "alo galera de cowboy";
+const char* password = "alogaleradepiao";
 
-//web server
-ESP8266WebServer server(80);
+//url api
+String serverName = "http://192.168.29.112:3000";
+
+String idUsuario = "";
+String idDado = "";
 
 const byte linhas = 3;
 const byte colunas = 3;
@@ -42,120 +45,211 @@ void setup() {
   pinMode(D6, INPUT);
   pinMode(D7, INPUT);
   Serial.begin(9600);
-  
+
   //configuraçoes do wifi
   WiFi.begin(ssid, password);
-  while(WiFi.status() != WL_CONNECTED){
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.println("tentando conexao");
   }
   Serial.println("");
-  Serial.print("Conectado no IP: " );
+  Serial.print("Conectado no IP: ");
   Serial.print(WiFi.localIP());
   Serial.print("Conexão efetuada com sucesso!");
 
-  //inicia web server
-  server.begin();
-  Serial.println("web server iniciado");
-  delay(500);
-  Serial.println("acesse o endereço pelo: ");
-  Serial.print(WiFi.localIP());
-
-  server.on("/", [](){
-    server.send(200, "req", "servidor do nodemcu");
-  });
-
-  server.on("/dados", [](){
-    server.send(200, "cabeçalho", palavra);
-  });
+  pegaUsuario();
 }
 
 void loop() {
-
-  server.handleClient();
 
   char teclaClicada = teclado.getKey();
 
   if (teclaClicada) {  //Se alguma tecla for pressionada
     switch (teclaClicada) {
       case '1':
-        aux[0][0] = '1';
-        break;
+        aux[0][0] = '1'; break;
       case '2':
-        aux[0][1] = '1';
-        break;
+        aux[0][1] = '1'; break;
       case '3':
-        aux[1][0] = '1';
-        break;
+        aux[1][0] = '1'; break;
       case '4':
-        aux[1][1] = '1';
-        break;
+        aux[1][1] = '1'; break;
       case '5':
-        aux[2][0] = '1';
-        break;
+        aux[2][0] = '1'; break;
       case '6':
-        aux[2][1] = '1';
-        break;
+        aux[2][1] = '1'; break;
     }
   }
 
-  if(digitalRead(D5)==LOW)
-  {
+  if (digitalRead(D5) == LOW) {
+    
     for (int i = 0; i < linhas; i++) {
       for (int j = 0; j < colunasAux; j++) {
-          auxStg += aux[i][j];
-        }
+        auxStg += aux[i][j];
+      }
     }
-    Serial.println(auxStg);  //Exibe letra completa
-    Serial.println(retorno());
-    Serial.println(palavra);
-    limpa();
+
+    delay(3000);
+    retorno();
+
+    delay(3000);
+    enviaDados();
+
+    limpaAux();
   }
 
-  if(digitalRead(D6)==LOW)
-  {
-    auxStg += "|";
-    palavra += "|";
-    Serial.println(auxStg);
+  if (digitalRead(D6) == LOW) {
+    delay(3000);
+    palavra += " ";
+    delay(3000);
   }
 
-  if(digitalRead(D7)==LOW)
-  {
+  if (digitalRead(D7) == LOW) {
     limpa();
   }
 }
 
-String retorno() {
-  if(auxStg == "100000"){palavra += "a"; return "a";}
-  if(auxStg == "101000"){palavra += "b";return "b";}
-  if(auxStg == "110000"){palavra += "c";return "c";}
-  if(auxStg == "110100"){palavra += "d";return "d";}
-  if(auxStg == "100100"){palavra += "e";return "e";}
-  if(auxStg == "111000"){palavra += "f";return "f";}
-  if(auxStg == "111100"){palavra += "g";return "g";}
-  if(auxStg == "101100"){palavra += "h";return "h";}
-  if(auxStg == "011000"){palavra += "i";return "i";}
-  if(auxStg == "011100"){palavra += "j";return "j";}
-  if(auxStg == "100100"){palavra += "k";return "k";}
-  if(auxStg == "101010"){palavra += "l";return "l";}
-  if(auxStg == "110010"){palavra += "m";return "m";}
-  if(auxStg == "110110"){palavra += "n";return "n";}
-  if(auxStg == "100110"){palavra += "o";return "o";}
-  if(auxStg == "111010"){palavra += "p";return "p";}
-  if(auxStg == "111110"){palavra += "q";return "q";}
-  if(auxStg == "101110"){palavra += "r";return "r";}
-  if(auxStg == "011010"){palavra += "s";return "s";}
-  if(auxStg == "011110"){palavra += "t";return "t";}
-  if(auxStg == "100011"){palavra += "u";return "u";}
-  if(auxStg == "101011"){palavra += "v";return "v";}
-  if(auxStg == "011101"){palavra += "w";return "w";}
-  if(auxStg == "110011"){palavra += "x";return "x";}
-  if(auxStg == "110111"){palavra += "y";return "y";}
-  if(auxStg == "100111"){palavra += "z";return "z";}
-  else{return "invalido";}
+void pegaUsuario() {
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    WiFiClient client;
+    HTTPClient http;
+
+    String serverPath = serverName + "/v1/usuarios";
+
+    http.begin(client, serverPath.c_str());
+
+    // realiza o get
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      String usuarios = http.getString();
+      idUsuario = usuarios.substring(7, 8);
+      Serial.print(idUsuario);
+      Serial.print(http.getString());
+    } else {
+      Serial.print(http.getString());
+      Serial.print("Erro: ");
+      Serial.println(httpResponseCode);
+    }
+
+    http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+}
+
+void pegaIdDado() {
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    WiFiClient client;
+    HTTPClient http;
+
+    String serverPath = serverName + "/v1/dados";
+
+    http.begin(client, serverPath.c_str());
+
+    // realiza o get
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      String dados = http.getString();
+      int ultimoId = dados.lastIndexOf("id");
+      idDado = dados.substring(ultimoId + 4, ultimoId + 5);
+    } else {
+      Serial.print("Erro: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+}
+
+void atualizaDados() {
+  if (WiFi.status() == WL_CONNECTED) {
+
+    WiFiClient client;
+    HTTPClient http;
+
+    pegaIdDado();
+    String serverPath = serverName + "/v1/dados/" + idDado;
+
+    http.begin(client, serverPath);
+
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.PUT("{\"dados\":{ \"dados\": \"" + palavra + "\"}}");
+
+    http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+}
+
+void enviaDados() {
+
+  if (WiFi.status() == WL_CONNECTED) {
+
+    WiFiClient client;
+    HTTPClient http;
+
+    String serverPath = serverName + "/v1/dados";
+
+    http.begin(client, serverPath);
+
+    // envia letra digitada
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = 0;
+
+    if (palavra.length() == 1) {  //cria nova frase
+      httpResponseCode = http.POST("{\"dados\":{ \"usuarioId\":" + idUsuario + ",\"dados\": \"" + palavra + "\"}}");
+    } else {  //atualiza frase
+      atualizaDados();
+    }
+
+    http.end();
+  } else {
+    Serial.println("WiFi Disconnected");
+  }
+}
+
+void retorno() {
+  if (auxStg == "100000") palavra += "a"; 
+  if (auxStg == "101000") palavra += "b";
+  if (auxStg == "110000") palavra += "c";
+  if (auxStg == "110100") palavra += "d";
+  if (auxStg == "100100") palavra += "e";
+  if (auxStg == "111000") palavra += "f";
+  if (auxStg == "111100") palavra += "g";
+  if (auxStg == "101100") palavra += "h";
+  if (auxStg == "011000") palavra += "i";
+  if (auxStg == "011100") palavra += "j";
+  if (auxStg == "100100") palavra += "k";
+  if (auxStg == "101010") palavra += "l";
+  if (auxStg == "110010") palavra += "m";
+  if (auxStg == "110110") palavra += "n";
+  if (auxStg == "100110") palavra += "o";
+  if (auxStg == "111010") palavra += "p";
+  if (auxStg == "111110") palavra += "q";
+  if (auxStg == "101110") palavra += "r";
+  if (auxStg == "011010") palavra += "s";
+  if (auxStg == "011110") palavra += "t";
+  if (auxStg == "100011") palavra += "u";
+  if (auxStg == "101011") palavra += "v";
+  if (auxStg == "011101") palavra += "w";
+  if (auxStg == "110011") palavra += "x";
+  if (auxStg == "110111") palavra += "y";
+  if (auxStg == "100111") palavra += "z"; 
 }
 
 void limpa() {
+  palavra = "";
+}
+
+void limpaAux() {
   for (int i = 0; i < linhas; i++) {
     for (int j = 0; j < colunasAux; j++) {
       aux[i][j] = '0';
