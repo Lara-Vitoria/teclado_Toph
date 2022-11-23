@@ -5,11 +5,11 @@
 #include "Keypad.h"
 
 //conexao wifi
-const char* ssid = "alo galera de cowboy";
-const char* password = "alogaleradepiao";
+const char* ssid = ""; //nome da rede wifi
+const char* password = ""; //senha da rede wifi
 
 //url api
-String serverName = "http://192.168.29.112:3000";
+String serverName = ""; //caminho da apo
 
 String idUsuario = "";
 String idDado = "";
@@ -126,8 +126,6 @@ void pegaUsuario() {
     if (httpResponseCode > 0) {
       String usuarios = http.getString();
       idUsuario = usuarios.substring(7, 8);
-      Serial.print(idUsuario);
-      Serial.print(http.getString());
     } else {
       Serial.print(http.getString());
       Serial.print("Erro: ");
