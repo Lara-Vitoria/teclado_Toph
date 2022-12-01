@@ -29,7 +29,6 @@ O projeto permite a comunicação de um teclado externo com o celular, permitind
 <br>
 
 ## 📁 Mais informações
-<br>
 
 <p align="center" >
     Para ver a apresentação do projeto <a href='https://docs.google.com/presentation/d/185FHBJvBUaNXR5WTrJH_5H5Y3SdASU9H/edit?usp=sharing&ouid=108578186583288794574&rtpof=true&sd=true'>clique aqui</a>!
